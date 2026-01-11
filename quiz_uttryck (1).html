@@ -1,0 +1,289 @@
+<!doctype html>
+<html lang="sv">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Quiz – Välj uttryck</title>
+  <style>
+    :root{font-family: system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; line-height:1.35;}
+    body{margin:0; background:#f6f7fb; color:#111;}
+    .wrap{max-width:900px; margin:0 auto; padding:20px;}
+    .card{background:#fff; border-radius:16px; padding:18px; box-shadow:0 6px 18px rgba(0,0,0,.06); margin:14px 0;}
+    h1{font-size:1.35rem; margin:0 0 8px;}
+    .muted{color:#555; font-size:.95rem;}
+    .qno{font-weight:700;}
+    .opts{margin:10px 0 6px; display:grid; gap:8px;}
+    label.opt{display:flex; gap:10px; align-items:flex-start; padding:10px 12px; border:1px solid #e3e6f0; border-radius:12px; background:#fff;}
+    label.opt:hover{border-color:#c9cfe6;}
+    input[type="radio"]{transform: translateY(2px);}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-top:10px;}
+    input[type="number"]{padding:10px 12px; border-radius:12px; border:1px solid #e3e6f0; width:160px; font-size:1rem;}
+    button{padding:10px 14px; border-radius:12px; border:0; background:#1f6feb; color:#fff; font-weight:700; cursor:pointer;}
+    button.secondary{background:#e9edf7; color:#111;}
+    button:disabled{opacity:.6; cursor:not-allowed;}
+    .feedback{margin-top:10px; padding:12px; border-radius:12px; border:1px solid #e3e6f0; background:#f9fafc;}
+    .good{border-color:#c7f0d3; background:#f3fff6;}
+    .bad{border-color:#ffd0d0; background:#fff6f6;}
+    .progress{display:flex; justify-content:space-between; align-items:center; gap:10px;}
+    .pill{padding:6px 10px; border-radius:999px; background:#eef2ff; font-weight:700; font-size:.9rem;}
+    .footer{margin-top:18px; font-size:.9rem; color:#555;}
+    code{background:#f0f1f6; padding:2px 6px; border-radius:8px;}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>Quiz: Välj uttryck</h1>
+      <div class="muted">
+        Läs uppgiften. Välj rätt uttryck (som i arbetsbladet) och skriv sedan svaret.
+        Du får direkt veta om det är rätt eller fel efter varje fråga.
+        <br><br>
+        <strong>Obs!</strong> Fråga 7 är rättad så att ett av svarsalternativen är addition (sammanlagt) och det andra är subtraktion.
+      </div>
+      <div class="footer">
+        Tips: Om du vill börja om helt, klicka på <button class="secondary" id="resetBtn" type="button">Nollställ</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="progress">
+        <div class="pill" id="progressPill">Fråga 1 av 8</div>
+        <div class="pill" id="scorePill">Poäng: 0 / 0</div>
+      </div>
+
+      <div id="questionArea"></div>
+
+      <div class="row">
+        <button id="checkBtn" type="button">Rätta</button>
+        <button id="nextBtn" type="button" class="secondary" disabled>Nästa</button>
+      </div>
+
+      <div id="feedback" class="feedback" style="display:none"></div>
+    </div>
+
+    <div class="card" id="doneCard" style="display:none">
+      <h1>Klart!</h1>
+      <div class="muted" id="finalText"></div>
+    </div>
+  </div>
+
+<script>
+const quiz = [
+  {
+    no: 1,
+    text: "På biblioteket finns 245 böcker på en hylla och 128 böcker på en annan hylla. Hur många böcker finns det tillsammans?",
+    options: ["245 - 128 =", "245 + 128="],
+    correctExpr: "245 + 128=",
+    correctValue: 245 + 128,
+    scoreMode: "both"
+  },
+  {
+    no: 2,
+    text: "På biblioteket finns 918 böcker på nedersta hyllan och 654 böcker på översta hyllan. Hur många fler böcker finns på den nedersta hyllan?",
+    options: ["918 + 654=", "918 - 654="],
+    correctExpr: "918 - 654=",
+    correctValue: 918 - 654,
+    scoreMode: "both"
+  },
+  {
+    no: 3,
+    text: "Klara sprang 780 meter. Leo sprang 645 meter. Hur mycket längre sprang Klara än Leo?",
+    options: ["780 + 645 =", "780 − 645 ="],
+    correctExpr: "780 − 645 =",
+    correctValue: 780 - 645,
+    scoreMode: "both"
+  },
+  {
+    no: 4,
+    text: "Anna lägger in 547 st böcker i ett förråd. Nu finns där 900 böcker. Hur många var det tidigare?",
+    options: ["900 - 547 =", "900 + 547 ="],
+    correctExpr: "900 - 547 =",
+    correctValue: 900 - 547,
+    scoreMode: "both"
+  },
+  {
+    no: 5,
+    text: "En buss kan ta 85 passagerare. På bussen sitter 62 personer. Hur många platser är lediga?",
+    options: ["85 + 62 =", "85 - 62 ="],
+    correctExpr: "85 - 62 =",
+    correctValue: 85 - 62,
+    scoreMode: "both"
+  },
+  {
+    no: 6,
+    text: "Emma får 498 kronor. Nu har hon 675 kronor. Hur mycket pengar hade hon innan?",
+    options: ["675 + 498=", "675 - 498="],
+    correctExpr: "675 - 498=",
+    correctValue: 675 - 498,
+    scoreMode: "both"
+  },
+  {
+    no: 7,
+    text: "På en skola finns det 375 elever i lågstadiet och 389 elever i mellanstadiet. Hur många elever finns det sammanlagt",
+    options: ["375 + 389=", "375 - 389="],
+    correctExpr: "375 + 389=",
+    correctValue: 375 + 389,
+    scoreMode: "both"
+  },
+  {
+    no: 8,
+    text: "Lisa hade 640 kronor. Hon köpte en jacka för 385 kronor. Hur mycket pengar har Lisa kvar?",
+    options: ["640 + 385=", "640 - 385="],
+    correctExpr: "640 - 385=",
+    correctValue: 640 - 385,
+    scoreMode: "both"
+  },
+];
+
+let state = {
+  idx: 0,
+  attempted: 0,
+  correct: 0,
+  locked: false
+};
+
+const questionArea = document.getElementById("questionArea");
+const progressPill = document.getElementById("progressPill");
+const scorePill = document.getElementById("scorePill");
+const checkBtn = document.getElementById("checkBtn");
+const nextBtn = document.getElementById("nextBtn");
+const feedback = document.getElementById("feedback");
+const doneCard = document.getElementById("doneCard");
+const finalText = document.getElementById("finalText");
+const resetBtn = document.getElementById("resetBtn");
+
+function renderQuestion(){
+  const q = quiz[state.idx];
+  progressPill.textContent = `Fråga ${q.no} av ${quiz.length}`;
+  scorePill.textContent = `Poäng: ${state.correct} / ${state.attempted}`;
+  feedback.style.display = "none";
+  feedback.className = "feedback";
+  nextBtn.disabled = true;
+  state.locked = false;
+
+  const optHtml = q.options.map((o, i) => `
+    <label class="opt">
+      <input type="radio" name="expr" value="${escapeHtml(o)}" />
+      <div><strong>${String.fromCharCode(65+i)}.</strong> ${escapeHtml(o)}</div>
+    </label>
+  `).join("");
+
+  questionArea.innerHTML = `
+    <div class="qno">Fråga ${q.no}</div>
+    <div style="margin-top:6px">${escapeHtml(q.text)}</div>
+    <div class="opts">${optHtml}</div>
+    <div class="row">
+      <label class="muted" for="ans"><strong>Svar:</strong></label>
+      <input id="ans" type="number" inputmode="numeric" />
+    </div>
+    <div class="muted" style="margin-top:8px">
+      ${q.scoreMode === "valueOnly" ? "I den här frågan rättas bara svaret." : "Välj uttryck och skriv svaret."}
+    </div>
+  `;
+}
+
+function getSelectedExpr(){
+  const checked = document.querySelector('input[name="expr"]:checked');
+  return checked ? checked.value : null;
+}
+
+function getAnswerValue(){
+  const v = document.getElementById("ans").value;
+  if(v === "" || v === null) return null;
+  return Number(v);
+}
+
+function check(){
+  if(state.locked) return;
+  const q = quiz[state.idx];
+
+  const expr = getSelectedExpr();
+  const ans = getAnswerValue();
+
+  if(expr === null){
+    showFeedback(false, "Välj ett uttryck först.");
+    return;
+  }
+  if(ans === null || Number.isNaN(ans)){
+    showFeedback(false, "Skriv in ett svar (ett tal).");
+    return;
+  }
+
+  state.attempted += 1;
+
+  const exprOk = (q.scoreMode === "valueOnly") ? true : (expr === q.correctExpr);
+  const valueOk = (ans === q.correctValue);
+
+  const ok = exprOk && valueOk;
+
+  if(ok){
+    state.correct += 1;
+    showFeedback(true, "Rätt ✅");
+  } else {
+    let msg = "Fel ❌<br><br>";
+    if(q.scoreMode !== "valueOnly"){
+      msg += `<strong>Rätt uttryck:</strong> ${escapeHtml(q.correctExpr)}<br>`;
+    }
+    msg += `<strong>Rätt svar:</strong> ${q.correctValue}`;
+    showFeedback(false, msg);
+  }
+
+  scorePill.textContent = `Poäng: ${state.correct} / ${state.attempted}`;
+  nextBtn.disabled = false;
+  state.locked = true;
+}
+
+function showFeedback(good, html){
+  feedback.style.display = "block";
+  feedback.className = "feedback " + (good ? "good" : "bad");
+  feedback.innerHTML = html;
+}
+
+function next(){
+  if(!state.locked) return;
+  if(state.idx < quiz.length - 1){
+    state.idx += 1;
+    renderQuestion();
+  } else {
+    finish();
+  }
+}
+
+function finish(){
+  document.querySelectorAll(".card")[1].style.display = "none";
+  doneCard.style.display = "block";
+  finalText.innerHTML = `Du fick <strong>${state.correct}</strong> rätt av <strong>${state.attempted}</strong> försök.`;
+}
+
+function resetAll(){
+  state = { idx: 0, attempted: 0, correct: 0, locked: false };
+  document.querySelectorAll(".card")[1].style.display = "block";
+  doneCard.style.display = "none";
+  renderQuestion();
+}
+
+function escapeHtml(s){
+  return String(s)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+checkBtn.addEventListener("click", check);
+nextBtn.addEventListener("click", next);
+resetBtn.addEventListener("click", resetAll);
+
+// Enter = rätta
+document.addEventListener("keydown", (e) => {
+  if(e.key === "Enter"){
+    if(!state.locked) check();
+    else next();
+  }
+});
+
+renderQuestion();
+</script>
+</body>
+</html>
